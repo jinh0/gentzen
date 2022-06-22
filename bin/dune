@@ -1,0 +1,5 @@
+(executable
+ (public_name atp)
+ (name main)
+ (modules main logic)
+ (libraries atp dream))
