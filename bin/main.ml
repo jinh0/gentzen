@@ -1,3 +1,6 @@
+open Atp
+open Typing
+
 let () =
   Dream.run
   @@ Dream.logger

@@ -9,8 +9,7 @@ let rec to_str (e: expr): string =
   let concat (e1: expr) (e2: expr) (s: string) =
     to_str e1 ^ " " ^ s ^ " " ^ to_str e2
   in
-  let paren (s: string) = "(" ^ s ^ ")"
-  in
+  let paren (s: string) = "(" ^ s ^ ")" in
   match e with
   | Var (x, _) -> String.make 1 x
   | Not e' -> paren ("not " ^ to_str e')

@@ -9,44 +9,46 @@ let rec eval (e: expr) =
   | Implies (e', e'') -> not (eval e' && not (eval e''))
   | Contra -> raise Contradiction
   
-let prop proof =
-  match proof with
-  | Proof (e, _, _) -> e
-  | _ -> raise Forbidden
-
 let get_hypos proof =
   raise NotImplemented
 
 let apply_rule (proofs: proof list) (rule: rule): expr =
   match rule with
+  (* Intro rules *)
   | And_I ->
       begin
         match proofs with
-        | [Proof (e, _, _); Proof (e', _, _)] -> And (e, e')
+        | [Proof p; Proof p'] -> And (p.prop, p'.prop)
         | _ -> raise WrongProof
       end
-  | And_E _ -> raise NotImplemented
   | Or_I intro ->
       begin
         match proofs with
-        | [p] -> Or (prop p, intro)
+        | [Proof p] -> Or (p.prop, intro)
         | _ -> raise WrongProof
       end
-  | Or_E -> raise NotImplemented
+  (* Elimination rules *)
+  | And_E elim ->
+      begin
+        match proofs with
+        | [Proof { prop = And (e, e') }] -> if e = elim then e' else e
+        | _ -> raise WrongProof
+      end
+  | Or_E elim -> raise NotImplemented
   | _ -> raise NotImplemented
 
 let is_equiv e e' =
   match e, e' with
   | Var (v, b), Var (v', b') -> v = v' && b = b'
   | Not n, Not n' -> n = n'
-  | And (a, b), And (a', b') | Or (a, b), Or (a', b')
-    -> (a = a' && b = b') || (a = b' && a' = b)
+  | And (a, b), And (a', b') | Or (a, b), Or (a', b') ->
+      (a = a' && b = b') || (a = b' && a' = b)
   | Implies (a, b), Implies (a', b') -> a = a' && b = b'
   | _ -> false
 
 let rec verify (proof: proof): bool =
   match proof with
   | Hypo _ -> true
-  | Proof (exp, proofs, rule) ->
-      List.for_all (fun p -> verify p) proofs &&
-      is_equiv exp (apply_rule proofs rule)
+  | Proof { prop; proofs; rule } ->
+      List.for_all verify proofs &&
+      is_equiv prop (apply_rule proofs rule)

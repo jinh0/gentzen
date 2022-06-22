@@ -8,12 +8,12 @@ type expr =
 
 type proof =
   | Hypo of expr
-  | Proof of expr * proof list * rule
+  | Proof of { prop: expr; proofs: proof list; assums: proof list; rule: rule }
 and rule =
   | And_I
   | And_E of expr
   | Or_I of expr
-  | Or_E
+  | Or_E of expr
   | Imp_I
   | Imp_E
   | Neg_I of expr
