@@ -8,13 +8,19 @@ type expr =
 
 type proof =
   | Hypo of expr
-  | Proof of { prop: expr; proofs: proof list; assums: proof list; rule: rule }
+  | Proof of {
+      prop : expr;
+      proofs : proof list;
+      assums : expr list;
+      rule : rule;
+    }
+
 and rule =
   | And_I
   | And_E of expr
   | Or_I of expr
   | Or_E of expr
-  | Imp_I
+  | Imp_I of expr
   | Imp_E
   | Neg_I of expr
   | Neg_E
@@ -25,3 +31,4 @@ exception NotImplemented
 exception WrongProof
 exception Contradiction
 exception Forbidden
+exception MissingAssum of expr
