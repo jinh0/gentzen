@@ -7,7 +7,7 @@ type expr =
   | Contra
 
 type proof =
-  | Hypo of expr
+  | Hypo of { prop : expr; cancel : bool }
   | Proof of {
       prop : expr;
       proofs : proof list;

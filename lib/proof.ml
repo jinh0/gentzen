@@ -11,6 +11,14 @@ let rec eval (e : expr) =
   | Contra -> raise Contradiction
 
 let get_hypos proof = raise NotImplemented
+
+let rec cancel_hypo canc = function
+  | Hypo { prop = p } -> Hypo { prop = p; cancel = p = canc }
+  | Proof { prop; rule; proofs; assums } ->
+      let proofs' = List.map (cancel_hypo canc) proofs in
+      let assums' = List.filter (( <> ) canc) assums in
+      Proof { prop; rule; proofs = proofs'; assums = assums' }
+
 let apply_rule (proofs : proof list) (rule : rule) : expr =
   match rule with
   (* Intro rules *)
