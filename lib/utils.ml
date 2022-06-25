@@ -20,7 +20,29 @@ let prop = function
   | Hypo e -> e.prop
   | Proof p -> p.prop
 
-let proof_to_str (proof: proof) = to_str (prop proof)
+let is_canceled = function
+  | Hypo { cancel } -> cancel
+  | Proof p -> false
+
+let proof_to_str (proof : proof) = to_str (prop proof)
+
+let assums_to_str =
+  let rec aux = function
+    | [] -> ""
+    | h :: t -> to_str h ^ " " ^ aux t
+  in
+  function
+  | Hypo h -> to_str h.prop
+  | Proof { assums } -> string_of_int (List.length assums)
+
+let rec proofs_to_str =
+  let rec aux = function
+    | [] -> ""
+    | h :: t -> proof_to_str h ^ " " ^ aux t
+  in
+  function
+  | Hypo h -> ""
+  | Proof { proofs } -> aux proofs
 
 let str_to_expr (_ : string) = raise NotImplemented
 (* let proc_str s = raise NotImplemented *)
