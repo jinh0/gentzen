@@ -5,7 +5,10 @@ open Utils
 
 let pretty_print ppf proof = Fmt.pf ppf "%s" (Utils.proof_to_str proof)
 let testable_proof = Alcotest.testable pretty_print ( = )
-let e1 = Var ('a', true) and e2 = Var ('b', false)
+
+let e1 = Var ('a', true)
+and e2 = Var ('b', false)
+
 let h1 = Hypo { prop = e1; cancel = false }
 let h1_canceled = Hypo { prop = e1; cancel = true }
 let h2 = Hypo { prop = e2; cancel = false }

@@ -110,6 +110,7 @@ let () =
       ( "Apply Implies rules",
         [
           test_case "Imp_I" `Quick test_imp_i;
-          test_case "Imp_I with no assumption" `Quick test_imp_i_no_assums;
-        ] );
+          test_case "Imp_I with no assumption causes error" `Quick test_imp_i_no_assums;
+        ]
+      );
     ]

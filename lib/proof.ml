@@ -25,25 +25,27 @@ let rec cancel_hypo canc = function
       Proof { prop; rule; proofs = proofs' }
 
 let apply_rule (proofs : proof list) (rule : rule) =
+  (* TODO: maybe refactor apply_rule to use valid_props? *)
+  let fst = List.hd and snd ps = List.nth ps 1 in
+  let valid_props proofs name n =
+    if List.length proofs = n then List.map prop proofs
+    else
+      raise (WrongProof (name ^ " requires " ^ string_of_int n ^ " arguments"))
+  in
   match rule with
-  | And_I -> (
-      match proofs with
-      | [ p; p' ] -> Proof { prop = And (prop p, prop p'); rule; proofs }
-      | _ -> raise (WrongProof "And_I requires 2 arguments"))
-  | And_E elim -> (
-      match proofs with
-      | [ p ] ->
-          let prop =
-            match prop p with
-            | And (e, e') -> if e = elim then e' else e
-            | _ -> raise (WrongProof "And_E requires one hypothesis of form A ^ B")
-          in
-          Proof { prop; rule; proofs = [ p ] }
-      | _ -> raise (WrongProof "And_E requires 2 arguments"))
-  | Or_I intro -> (
-      match proofs with
-      | [ p ] -> Proof { prop = Or (prop p, intro); rule; proofs }
-      | _ -> raise (WrongProof "Or_I requires one argument"))
+  | And_I ->
+      let props = valid_props proofs "And_I" 2 in
+      Proof { prop = And (fst props, snd props); rule; proofs }
+  | And_E elim ->
+      let props = valid_props proofs "And_E" 1 in
+      let prop = match fst props with
+        | And (e, e') -> if e = elim then e' else e
+        | _ -> raise (WrongProof "And_E requires one hypothesis of form A ^ B")
+      in
+      Proof { prop; rule; proofs }
+  | Or_I intro ->
+      let prop = fst (valid_props proofs "Or_I" 1) in
+      Proof { prop = Or (prop, intro); rule; proofs }
   | Or_E cons -> (
       match proofs with
       | [ p ] -> raise NotImplemented
@@ -56,15 +58,53 @@ let apply_rule (proofs : proof list) (rule : rule) =
               Proof { prop = Implies (assum, prop); rule; proofs = [ p ] }
             in
             cancel_hypo assum new_proof
-          else raise (MissingAssum (assum, ("Missing the assumption " ^ to_str assum)))
+          else
+            raise
+              (MissingAssum (assum, "Missing the assumption " ^ to_str assum))
       | _ -> raise (WrongProof "Imp_I requires one argument"))
   | Imp_E -> (
       match proofs with
-      | [ p; p' ] -> raise NotImplemented
-        (* match prop p, prop p' with
-        | Implies (e, e'), e'' -> if e != e'' then WrongProof
-        | _ -> raise WrongProof *)
+      | [ p; p' ] -> (
+          match (prop p, prop p') with
+          | Implies (e, e'), e'' ->
+              if e != e'' then
+                raise (WrongProof "Imp_E hypothesis does not match")
+              else Proof { prop = e'; rule; proofs }
+          | _ -> raise (WrongProof "Imp_E requires an Implies term"))
       | _ -> raise (WrongProof "Imp_E requires 2 arguments"))
+  | Neg_I assum -> (
+      match proofs with
+      | [ p ] -> (
+          match prop p with
+          | Contra ->
+              if List.mem assum (get_assums p) then
+                cancel_hypo assum (Proof { prop = Not assum; rule; proofs })
+              else
+                raise
+                  (MissingAssum (assum, "Missing the assumption " ^ to_str assum))
+          | _ -> raise (WrongProof "Neg_I requires a contradiction"))
+      | _ -> raise (WrongProof "Neg_I requires 1 argument"))
+  | Neg_E -> (
+      match proofs with
+      | [ p; p' ] -> (
+          match (prop p, prop p') with
+          | e, Not e' | Not e, e' ->
+              if e = e' then Proof { prop = Contra; rule; proofs }
+              else raise (WrongProof "Neg_I terms do not cause a contradiction")
+          | _ -> raise (WrongProof "Neg_I terms do not cause a contradiction"))
+      | _ -> raise (WrongProof "Neg_I requires one argument"))
+  | Raa assum -> (
+      match proofs with
+      | [ p ] -> (
+          match (prop p, assum) with
+          | Contra, Not e ->
+              if List.mem assum (get_assums p) then
+                cancel_hypo assum (Proof { prop = e; rule; proofs })
+              else
+                raise
+                  (MissingAssum (assum, "Missing the assumption " ^ to_str assum))
+          | _ -> raise (WrongProof "RAA requires a contradiction"))
+      | _ -> raise (WrongProof "RAA requires one argument"))
   | _ -> raise NotImplemented
 
 let is_equiv e e' =
