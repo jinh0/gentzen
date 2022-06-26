@@ -10,63 +10,25 @@ let rec eval (e : expr) =
   | Implies (e', e'') -> not (eval e' && not (eval e''))
   | Contra -> raise Contradiction
 
-let get_hypos proof = raise NotImplemented
+(* TODO: make tail recursive *)
+let get_assums proof =
+  let rec aux acc = function
+    | Hypo { prop; cancel } -> if cancel then acc else prop :: acc
+    | Proof { proofs } -> List.fold_left aux acc proofs
+  in
+  aux [] proof
 
 let rec cancel_hypo canc = function
   | Hypo { prop; cancel } -> Hypo { prop; cancel = cancel || prop = canc }
-  | Proof { prop; rule; proofs; assums } ->
+  | Proof { prop; rule; proofs } ->
       let proofs' = List.map (cancel_hypo canc) proofs in
-      let assums' = List.filter (( <> ) canc) assums in
-      Proof { prop; rule; proofs = proofs'; assums = assums' }
-
-let archive_apply_rule (proofs : proof list) (rule : rule) : expr =
-  match rule with
-  (* Intro rules *)
-  | And_I -> (
-      match proofs with
-      | [ p; p' ] -> And (prop p, prop p')
-      | _ -> raise WrongProof)
-  | Or_I intro -> (
-      match proofs with
-      | [ p ] -> Or (prop p, intro)
-      | _ -> raise WrongProof)
-  | Imp_I canc -> (
-      match proofs with
-      | [ Proof { prop; assums } ] ->
-          if List.mem canc assums then Implies (canc, prop)
-          else raise (MissingAssum canc)
-      | _ -> raise WrongProof)
-  (* Elimination rules *)
-  | And_E elim -> (
-      match proofs with
-      | [ Proof { prop = And (e, e') } ] | [ Hypo { prop = And (e, e') } ] ->
-          if e = elim then e' else e
-      | _ -> raise WrongProof)
-  | Or_E elim -> raise NotImplemented
-  | _ -> raise NotImplemented
-
-let union_assums (proofs : proof list) =
-  let get_assums = function
-    | Hypo { prop } -> [ prop ]
-    | Proof { assums } -> assums
-  in
-  let f (acc : expr list) (cur : proof) =
-    acc @ List.filter (fun x -> not (List.mem x acc)) (get_assums cur)
-  in
-  List.fold_left f [] proofs
+      Proof { prop; rule; proofs = proofs' }
 
 let apply_rule (proofs : proof list) (rule : rule) =
   match rule with
   | And_I -> (
       match proofs with
-      | [ p; p' ] ->
-          Proof
-            {
-              prop = And (prop p, prop p');
-              assums = union_assums proofs;
-              rule;
-              proofs;
-            }
+      | [ p; p' ] -> Proof { prop = And (prop p, prop p'); rule; proofs }
       | _ -> raise WrongProof)
   | And_E elim -> (
       match proofs with
@@ -76,29 +38,32 @@ let apply_rule (proofs : proof list) (rule : rule) =
             | And (e, e') -> if e = elim then e' else e
             | _ -> raise WrongProof
           in
-          Proof { prop; assums = union_assums proofs; rule; proofs = [ p ] }
+          Proof { prop; rule; proofs = [ p ] }
       | _ -> raise WrongProof)
   | Or_I intro -> (
       match proofs with
-      | [ p ] ->
-          Proof
-            {
-              prop = Or (prop p, intro);
-              assums = union_assums proofs;
-              rule;
-              proofs;
-            }
+      | [ p ] -> Proof { prop = Or (prop p, intro); rule; proofs }
       | _ -> raise WrongProof)
-  | Imp_I canc -> (
+  | Or_E cons -> (
       match proofs with
-      | [ (Proof { prop; assums } as p) ] ->
-          if List.mem canc assums then
+      | [ p ] -> raise NotImplemented
+      | _ -> raise WrongProof)
+  | Imp_I assum -> (
+      match proofs with
+      | [ (Proof { prop } as p) ] ->
+          if List.mem assum (get_assums p) then
             let new_proof =
-              Proof
-                { prop = Implies (canc, prop); rule; assums; proofs = [ p ] }
+              Proof { prop = Implies (assum, prop); rule; proofs = [ p ] }
             in
-            cancel_hypo canc new_proof
-          else raise (MissingAssum canc)
+            cancel_hypo assum new_proof
+          else raise (MissingAssum assum)
+      | _ -> raise WrongProof)
+  | Imp_E -> (
+      match proofs with
+      | [ p; p' ] -> raise NotImplemented
+        (* match prop p, prop p' with
+        | Implies (e, e'), e'' -> if e != e'' then WrongProof
+        | _ -> raise WrongProof *)
       | _ -> raise WrongProof)
   | _ -> raise NotImplemented
 

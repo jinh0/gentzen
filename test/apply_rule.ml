@@ -10,40 +10,25 @@ let e1 = Var ('a', true)
 let e2 = Var ('b', true)
 let h1 = Hypo { prop = e1; cancel = false }
 let h2 = Hypo { prop = e2; cancel = false }
-
-let h1_or_i =
-  Proof { prop = Or (e1, e2); assums = [ e1 ]; rule = Or_I e2; proofs = [ h1 ] }
-
+let h1_or_i = Proof { prop = Or (e1, e2); rule = Or_I e2; proofs = [ h1 ] }
 let h3 = Hypo { prop = And (e1, e2); cancel = false }
 
 let test_and_i () =
   let new_proof =
-    Proof
-      {
-        prop = And (e1, e2);
-        proofs = [ h1; h2 ];
-        rule = And_I;
-        assums = [ e1; e2 ];
-      }
+    Proof { prop = And (e1, e2); proofs = [ h1; h2 ]; rule = And_I }
   in
   Alcotest.(check testable_proof)
     "Are equal" new_proof
     (Proof.apply_rule [ h1; h2 ] And_I)
 
 let test_and_e_left () =
-  let new_proof =
-    Proof
-      { prop = e2; proofs = [ h3 ]; rule = And_E e1; assums = [ And (e1, e2) ] }
-  in
+  let new_proof = Proof { prop = e2; proofs = [ h3 ]; rule = And_E e1 } in
   Alcotest.(check testable_proof)
     "Are equal" new_proof
     (Proof.apply_rule [ h3 ] (And_E e1))
 
 let test_and_e_right () =
-  let new_proof =
-    Proof
-      { prop = e1; proofs = [ h3 ]; rule = And_E e2; assums = [ And (e1, e2) ] }
-  in
+  let new_proof = Proof { prop = e1; proofs = [ h3 ]; rule = And_E e2 } in
   Alcotest.(check testable_proof)
     "Are equal" new_proof
     (Proof.apply_rule [ h3 ] (And_E e2))
@@ -59,7 +44,6 @@ let test_canc_hypo () =
       {
         prop = Or (e1, e2);
         rule = Or_I e2;
-        assums = [];
         proofs = [ Hypo { prop = e1; cancel = true } ];
       }
   in
@@ -73,7 +57,6 @@ let test_imp_i () =
         prop = Or (Var ('a', true), Var ('b', true));
         rule = Or_I (Var ('a', true));
         proofs = [ Hypo { prop = Var ('b', true); cancel = false } ];
-        assums = [ Var ('b', true) ];
       }
   in
   let or_proof_canc =
@@ -82,17 +65,10 @@ let test_imp_i () =
         prop = Or (Var ('a', true), Var ('b', true));
         rule = Or_I (Var ('a', true));
         proofs = [ Hypo { prop = Var ('b', true); cancel = true } ];
-        assums = [];
       }
   in
   let proof =
-    Proof
-      {
-        prop;
-        rule = Imp_I (Var ('b', true));
-        proofs = [ or_proof_canc ];
-        assums = [];
-      }
+    Proof { prop; rule = Imp_I (Var ('b', true)); proofs = [ or_proof_canc ] }
   in
   Alcotest.(check testable_proof)
     "Are equal" proof
@@ -105,7 +81,6 @@ let test_imp_i_no_assums () =
         prop = Or (Var ('a', true), Var ('b', true));
         rule = Or_I (Var ('a', true));
         proofs = [ Hypo { prop = Var ('b', true); cancel = true } ];
-        assums = [];
       }
   in
   let applied =

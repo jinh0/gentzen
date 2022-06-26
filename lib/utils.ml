@@ -17,23 +17,13 @@ let rec to_str (e : expr) : string =
   | Contra -> "contra"
 
 let prop = function
-  | Hypo e -> e.prop
-  | Proof p -> p.prop
+  | Hypo { prop } | Proof { prop } -> prop
 
 let is_canceled = function
   | Hypo { cancel } -> cancel
   | Proof p -> false
 
 let proof_to_str (proof : proof) = to_str (prop proof)
-
-let assums_to_str =
-  let rec aux = function
-    | [] -> ""
-    | h :: t -> to_str h ^ " " ^ aux t
-  in
-  function
-  | Hypo h -> to_str h.prop
-  | Proof { assums } -> string_of_int (List.length assums)
 
 let rec proofs_to_str =
   let rec aux = function
@@ -45,12 +35,3 @@ let rec proofs_to_str =
   | Proof { proofs } -> aux proofs
 
 let str_to_expr (_ : string) = raise NotImplemented
-(* let proc_str s = raise NotImplemented *)
-(* in *)
-(* List.fold_right f (String.split_on_char ' ' s) [] *)
-(* in  *)
-(* let rec str_to_expr (s: string list) = *)
-(* match s with *)
-(* | s -> raise NotImplemented *)
-(* in *)
-(* proc_str s *)

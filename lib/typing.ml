@@ -8,12 +8,7 @@ type expr =
 
 type proof =
   | Hypo of { prop : expr; cancel : bool }
-  | Proof of {
-      prop : expr;
-      proofs : proof list;
-      assums : expr list;
-      rule : rule;
-    }
+  | Proof of { prop : expr; proofs : proof list; rule : rule }
 
 and rule =
   | And_I
@@ -28,7 +23,7 @@ and rule =
 
 exception EmptyProof
 exception NotImplemented
-exception WrongProof
+exception WrongProof of string
 exception Contradiction
 exception Forbidden
 exception MissingAssum of expr
