@@ -29,25 +29,25 @@ let apply_rule (proofs : proof list) (rule : rule) =
   | And_I -> (
       match proofs with
       | [ p; p' ] -> Proof { prop = And (prop p, prop p'); rule; proofs }
-      | _ -> raise WrongProof)
+      | _ -> raise (WrongProof "And_I requires 2 arguments"))
   | And_E elim -> (
       match proofs with
       | [ p ] ->
           let prop =
             match prop p with
             | And (e, e') -> if e = elim then e' else e
-            | _ -> raise WrongProof
+            | _ -> raise (WrongProof "And_E requires one hypothesis of form A ^ B")
           in
           Proof { prop; rule; proofs = [ p ] }
-      | _ -> raise WrongProof)
+      | _ -> raise (WrongProof "And_E requires 2 arguments"))
   | Or_I intro -> (
       match proofs with
       | [ p ] -> Proof { prop = Or (prop p, intro); rule; proofs }
-      | _ -> raise WrongProof)
+      | _ -> raise (WrongProof "Or_I requires one argument"))
   | Or_E cons -> (
       match proofs with
       | [ p ] -> raise NotImplemented
-      | _ -> raise WrongProof)
+      | _ -> raise (WrongProof "Or_E requires one argument"))
   | Imp_I assum -> (
       match proofs with
       | [ (Proof { prop } as p) ] ->
@@ -56,15 +56,15 @@ let apply_rule (proofs : proof list) (rule : rule) =
               Proof { prop = Implies (assum, prop); rule; proofs = [ p ] }
             in
             cancel_hypo assum new_proof
-          else raise (MissingAssum assum)
-      | _ -> raise WrongProof)
+          else raise (MissingAssum (assum, ("Missing the assumption " ^ to_str assum)))
+      | _ -> raise (WrongProof "Imp_I requires one argument"))
   | Imp_E -> (
       match proofs with
       | [ p; p' ] -> raise NotImplemented
         (* match prop p, prop p' with
         | Implies (e, e'), e'' -> if e != e'' then WrongProof
         | _ -> raise WrongProof *)
-      | _ -> raise WrongProof)
+      | _ -> raise (WrongProof "Imp_E requires 2 arguments"))
   | _ -> raise NotImplemented
 
 let is_equiv e e' =

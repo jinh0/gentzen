@@ -26,4 +26,4 @@ exception NotImplemented
 exception WrongProof of string
 exception Contradiction
 exception Forbidden
-exception MissingAssum of expr
+exception MissingAssum of expr * string
