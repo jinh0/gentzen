@@ -1,6 +1,6 @@
 (executable
- (public_name atp)
+ (public_name gentzen)
  (name main)
  (modules main logic)
- (libraries atp dream)
+ (libraries gentzen dream)
  (preprocess (pps lwt_ppx ppx_yojson_conv)))

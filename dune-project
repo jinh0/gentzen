@@ -1,11 +1,11 @@
 (lang dune 3.1)
 
-(name atp)
+(name gentzen)
 
 (generate_opam_files true)
 
 (source
- (github jinh0/atp))
+ (github jinh0/gentzen))
 
 (authors "Jinho Yoon")
 
@@ -16,7 +16,7 @@
 (documentation https://url/to/documentation)
 
 (package
- (name atp)
+ (name gentzen)
  (synopsis "An automated theorem prover written in OCaml.")
  (description "")
  (depends ocaml dune)

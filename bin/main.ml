@@ -1,4 +1,4 @@
-open Atp
+open Gentzen
 open Typing
 
 let () =
