@@ -2,4 +2,5 @@
  (public_name atp)
  (name main)
  (modules main logic)
- (libraries atp dream))
+ (libraries atp dream)
+ (preprocess (pps lwt_ppx ppx_yojson_conv)))
