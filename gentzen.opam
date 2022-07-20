@@ -7,7 +7,7 @@ authors: ["Jinho Yoon"]
 license: "LICENSE"
 tags: ["topics" "to describe" "your" "project"]
 homepage: "https://github.com/jinh0/gentzen"
-doc: "https://url/to/documentation"
+doc: "https://github.com/jinh0/gentzen"
 bug-reports: "https://github.com/jinh0/gentzen/issues"
 depends: [
   "ocaml"
