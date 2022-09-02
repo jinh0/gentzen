@@ -1,5 +1,5 @@
 (executable
  (public_name gentzen)
  (name main)
- (modules main server)
+ (modules main)
  (libraries gentzen))

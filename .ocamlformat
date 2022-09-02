@@ -1,4 +1,4 @@
 profile = default
-version = 0.21.0
+version = 0.24.1
 exp-grouping = preserve
 break-cases = fit-or-vertical
