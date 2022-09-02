@@ -1,6 +1,5 @@
 (executable
  (public_name gentzen)
  (name main)
- (modules main logic)
- (libraries gentzen dream)
- (preprocess (pps lwt_ppx ppx_yojson_conv)))
+ (modules main server)
+ (libraries gentzen))
