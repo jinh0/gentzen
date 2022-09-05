@@ -1,3 +1,5 @@
+open Typing
+
 type partial = Str of string | Nested of string | List of partial list
 
 let to_list s =
@@ -39,6 +41,15 @@ let rec part_to_expr : partial -> expr = function
 
 let rec join = function [] -> "" | h :: t -> h ^ ", " ^ join t
 
+let split list_str =
+  let rec iter cur acc = function
+  | [] -> String.trim cur :: acc
+  | h :: t ->
+      if h = "," then iter "" (String.trim cur :: acc) t
+      else iter (cur ^ h) acc t
+  in
+  iter "" [] list_str |> List.rev
+
 let split_sides theorem =
   let rec get_assums cur assums = function
     | [] -> failwith "Something went wrong."
@@ -47,9 +58,8 @@ let split_sides theorem =
         if h = "," then get_assums "" (String.trim cur :: assums) t
         else get_assums (cur ^ h) assums t
   and get_conseqs = function
-    | [] -> ""
-    | "|" :: "-" :: t ->
-        t |> List.fold_left (fun acc x -> acc ^ x) "" |> String.trim
+    | [] -> []
+    | "|" :: "-" :: t -> t |> split
     | _ :: t -> get_conseqs t
   in
   (List.rev (get_assums "" [] theorem), get_conseqs theorem)
@@ -57,6 +67,6 @@ let split_sides theorem =
 let str_to_expr s = s |> str_to_part |> part_to_expr
 
 
-let convert (theorem: string) =
-  let assums, conseq = theorem |> to_list |> split_sides in
-  (List.map str_to_expr assums, str_to_expr conseq)
+let convert theorem =
+  let assums, conseqs = theorem |> to_list |> split_sides in
+  (List.map str_to_expr assums, str_to_expr (List.nth conseqs 0))
