@@ -58,13 +58,21 @@ let find_app sequent =
         | _ -> failwith "Application not found"
       end
 
+let print sequent =
+  let assums, conseqs = sequent in
+  let combine expr_list =
+    List.fold_left (fun str e -> if str = "" then Parser.expr_to_str e else str ^ ", " ^ Parser.expr_to_str e) "" expr_list
+  in
+  print_endline ((combine assums) ^ " |- " ^ (combine conseqs))
+
 let prove sequent =
   let rec next = function
     | One sequent ->
-        if finished sequent then []
+        if finished sequent then
+          let _ = print sequent in []
         else
           let rule, chosen = find_app sequent in
-          (rule, chosen) :: next (apply sequent chosen rule)
+          print sequent; (rule, chosen) :: next (apply sequent chosen rule)
     | Branch (node, node') -> next node @ next node'
   in
   next (One sequent)

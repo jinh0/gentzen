@@ -66,6 +66,12 @@ let split_sides theorem =
 
 let str_to_expr s = s |> str_to_part |> part_to_expr
 
+let rec expr_to_str = function
+  | Var v -> v
+  | Not e -> "~" ^ expr_to_str e
+  | And (e, e') -> "(" ^ expr_to_str e ^ " /\\ " ^ expr_to_str e' ^ ")"
+  | Or (e, e') -> "(" ^ expr_to_str e ^ " \\/ " ^ expr_to_str e' ^ ")"
+  | Implies (e, e') -> "(" ^ expr_to_str e ^ " -> " ^ expr_to_str e' ^ ")"
 
 let convert theorem =
   let assums, conseqs = theorem |> to_list |> split_sides in
