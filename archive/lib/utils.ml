@@ -16,22 +16,12 @@ let rec to_str (e : expr) : string =
   | Implies (e1, e2) -> paren (concat e1 e2 "implies")
   | Contra -> "contra"
 
-let prop = function
-  | Hypo { prop } | Proof { prop } -> prop
-
-let is_canceled = function
-  | Hypo { cancel } -> cancel
-  | Proof p -> false
-
+let prop = function Hypo { prop } | Proof { prop } -> prop
+let is_canceled = function Hypo { cancel } -> cancel | Proof p -> false
 let proof_to_str (proof : proof) = to_str (prop proof)
 
 let rec proofs_to_str =
-  let rec aux = function
-    | [] -> ""
-    | h :: t -> proof_to_str h ^ " " ^ aux t
-  in
-  function
-  | Hypo h -> ""
-  | Proof { proofs } -> aux proofs
+  let rec aux = function [] -> "" | h :: t -> proof_to_str h ^ " " ^ aux t in
+  function Hypo h -> "" | Proof { proofs } -> aux proofs
 
 let str_to_expr (_ : string) = raise NotImplemented

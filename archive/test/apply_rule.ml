@@ -87,11 +87,7 @@ let test_imp_i_no_assums () =
     try Some (Proof.apply_rule [ or_proof_canc ] (Imp_I (Var ('b', true))))
     with MissingAssum _ -> None
   in
-  let res =
-    match applied with
-    | Some x -> false
-    | None -> true
-  in
+  let res = match applied with Some x -> false | None -> true in
   Alcotest.(check bool) "Are equal" res true
 
 let () =
@@ -110,7 +106,7 @@ let () =
       ( "Apply Implies rules",
         [
           test_case "Imp_I" `Quick test_imp_i;
-          test_case "Imp_I with no assumption causes error" `Quick test_imp_i_no_assums;
-        ]
-      );
+          test_case "Imp_I with no assumption causes error" `Quick
+            test_imp_i_no_assums;
+        ] );
     ]

@@ -38,7 +38,8 @@ let apply_rule (proofs : proof list) (rule : rule) =
       Proof { prop = And (fst props, snd props); rule; proofs }
   | And_E elim ->
       let props = valid_props proofs "And_E" 1 in
-      let prop = match fst props with
+      let prop =
+        match fst props with
         | And (e, e') -> if e = elim then e' else e
         | _ -> raise (WrongProof "And_E requires one hypothesis of form A ^ B")
       in
