@@ -34,7 +34,11 @@ let finished sequent =
     prioritize consequences before assumptions. *)
 let find_app sequent =
   let assums, conseqs = sequent in
-  let fst_comp l = List.find_opt (function Var _ -> false | _ -> true) l in
+  let fst_comp l =
+    List.find_opt 
+    (function Var _ -> false | Not x -> not (l = conseqs && List.length conseqs = 1) | _ -> true)
+    l
+  in
   match fst_comp conseqs with
   | Some chosen -> (chosen, equiv_rule ~is_conseq:true chosen)
   | _ -> (
