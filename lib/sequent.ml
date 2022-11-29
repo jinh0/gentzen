@@ -1,102 +1,81 @@
-(** Sequent calculus:
-
-    This module contains functions related to producing proofs
-    using sequent calculus. *)
-
 open Typing
 
+(* Utility type: either *)
+type 'a either = One of 'a | Two of 'a * 'a
+
+let bind f = function
+  | One x -> One (f x) | Two (x, y) -> Two (f x, f y)
+
+(* Main types *)
 type sequent = expr list * expr list
-type rule = And_L | And_R | Or_L | Or_R | Imp_L | Imp_R | Neg_L | Neg_R
+type rule = And_L | And_R | Or_L | Or_R | Imp_L | Imp_R | Neg_L | Neg_R | Axiom
+type direction = Left | Right | Neither
+type proof = Proof of { sequent: sequent; applied: expr * rule; subproofs: proof either } | Axiom of sequent
 
-type proof = None | Axiom of sequent | Node of (sequent * rule) * proof * proof
+let dir rule =
+  match rule with
+  | And_L | Or_L | Imp_L | Neg_L -> Left
+  | And_R | Or_R | Imp_R | Neg_R -> Right
+  | Axiom -> Neither
 
-type prod = One of sequent | Branch of prod * prod
+(** [finished sequent] Check if the sequent is finished decomposing,
+    by checking if an assumption is found in the consequences *)
+let finished sequent =
+  let assums, conseqs = sequent in
+  List.exists (fun x -> List.mem x conseqs) assums
 
-let from_theorem (assums, conseq) = (assums, [ conseq ])
 
-(** Return the rule to apply for the given proposition. *)
-let equiv_rule ~is_conseq = function
+(** [rule is_conseq] Return the rule to apply for the given proposition. *)
+let rule is_conseq = function
   | Not _ -> if is_conseq then Neg_R else Neg_L
   | And _ -> if is_conseq then And_R else And_L
   | Or _ -> if is_conseq then Or_R else Or_L
   | Implies _ -> if is_conseq then Imp_R else Imp_L
   | Var _ -> failwith "There is no rule for variables"
 
-(** Check if the sequent is finished, i.e., 
-    one of the assumptions equals one of the consequences. *)
-let finished sequent =
-  let assums, conseqs = sequent in
-  match List.find_opt (fun x -> List.mem x conseqs) assums with
-  | Some _ -> true
-  | None -> false
 
-(** Find an expression that can be broken down;
-    prioritize consequences before assumptions. *)
+(** [find_app sequent] Find applicable expression and rule in sequent *)
 let find_app sequent =
   let assums, conseqs = sequent in
-  let fst_comp l =
-    List.find_opt 
-    (function Var _ -> false | Not x -> not (l = conseqs && List.length conseqs = 1) | _ -> true)
-    l
-  in
-  match fst_comp conseqs with
-  | Some chosen -> (chosen, equiv_rule ~is_conseq:true chosen)
-  | _ -> (
-      match fst_comp assums with
-      | Some chosen -> (chosen, equiv_rule ~is_conseq:false chosen)
-      | _ -> failwith "Application not found")
+  let is_appli = function Var _ -> false | _ -> true in
+  match List.find_opt is_appli conseqs with
+  | Some chosen -> (chosen, rule true chosen)
+  | None ->
+      let chosen = List.find is_appli assums in
+      (chosen, rule false chosen)
 
-(** Print sequent *)
-let print sequent =
-  let assums, conseqs = sequent in
-  let combine expr_list =
-    List.fold_left
-      (fun str e ->
-        if str = "" then Parser.expr_to_str e
-        else str ^ ", " ^ Parser.expr_to_str e)
-      "" expr_list
-  in
-  print_endline (combine assums ^ " |- " ^ combine conseqs)
 
-let apply sequent rule exp =
+let apply (sequent: sequent) (chosen, rule) =
+  let filter (list: expr list) = List.filter ((<>) chosen) list in
   let assums, conseqs = sequent in
-  (* Create the new sequent by
-      1. filtering out the old expression
-      2. adding in the new, applied expression *)
-  let filter list = List.filter (fun x -> x <> exp) list in
-  match (rule, exp) with
-  | And_L, And (e, e') -> One (e :: e' :: filter assums, conseqs)
-  | Or_L, Or (e, e') ->
-      let a = One (e :: filter assums, conseqs)
-      and b = One (e' :: filter assums, conseqs) in
-      Branch (a, b)
-  | Imp_L, Implies (e, e') ->
-      let a = One (filter assums, e :: conseqs)
-      and b = One (e' :: filter assums, conseqs) in
-      Branch (a, b)
-  | Neg_L, Not e -> One (filter assums, e :: conseqs)
-  | And_R, And (e, e') ->
-      Branch
-        (One (assums, e :: filter conseqs), One (assums, e' :: filter conseqs))
-  | Or_R, Or (e, e') -> One (assums, e :: e' :: filter conseqs)
-  | Imp_R, Implies (e, e') -> One (e :: assums, e' :: filter conseqs)
-  | Neg_R, Not e -> One (e :: assums, filter conseqs)
+  match chosen, rule with
+  | And (e, e'), And_L -> One (e :: e' :: filter assums, conseqs)
+  | And (e, e'), And_R ->
+      Two ((assums, e :: filter conseqs), (assums, e' :: filter conseqs))
+  | Or (e, e'), Or_L ->
+      Two ((e :: filter assums, conseqs), (e' :: filter assums, conseqs))
+  | Or (e, e'), Or_R -> One (assums, e :: e' :: filter conseqs)
+  | Implies (e, e'), Imp_L ->
+      Two ((filter assums, e :: conseqs), (e' :: filter assums, conseqs))
+  | Implies (e, e'), Imp_R -> One (e :: assums, e' :: filter conseqs)
+  | Not e, Neg_L -> One (filter assums, e :: conseqs)
+  | Not e, Neg_R -> One (e :: assums, filter conseqs)
   | _, _ -> failwith "apply wrong"
 
-(** Produces the sequent calculus tree and returns
-    the list of (rule, expr) applied, in preorder order. *)
-let prove sequent =
-  let rec next = function
-    | One sequent ->
-        if finished sequent then
-          let _ = print sequent in
-          []
-        else
-          let chosen, rule = find_app sequent in
-          print sequent;
-          (chosen, rule) :: next (apply sequent rule chosen)
-    | Branch (sequent, sequent') -> next sequent @ next sequent'
-  in
-  next (One sequent)
 
-let prove_str thm = Parser.convert thm |> from_theorem |> prove
+let decompose sequent =
+  let to_apply = find_app sequent in
+  let decomposed = apply sequent to_apply in
+  to_apply, decomposed
+
+
+(** [prove sequent] Construct a proof tree of the sequent
+    1. If finished, then return
+    2. Find rule to apply
+    3. Add to the proof tree the deconstructed sequents *)
+let rec prove sequent =
+  if finished sequent then Axiom sequent
+  else
+    let applied, decomposed = decompose sequent in
+    Proof { sequent; applied; subproofs = bind prove decomposed }
+
