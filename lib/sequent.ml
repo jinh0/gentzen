@@ -12,6 +12,8 @@ type rule = And_L | And_R | Or_L | Or_R | Imp_L | Imp_R | Neg_L | Neg_R | Axiom
 type direction = Left | Right | Neither
 type proof = Proof of { sequent: sequent; applied: expr * rule; subproofs: proof either } | Axiom of sequent
 
+let from_theorem (assums, conseq): expr list * expr list = (assums, [conseq])
+
 let dir rule =
   match rule with
   | And_L | Or_L | Imp_L | Neg_L -> Left
@@ -79,3 +81,5 @@ let rec prove sequent =
     let applied, decomposed = decompose sequent in
     Proof { sequent; applied; subproofs = bind prove decomposed }
 
+
+let parse_prove thm_str = thm_str |> Parser.convert |> from_theorem |> prove
